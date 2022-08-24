@@ -1,0 +1,57 @@
+---
+- name: Provisioning server
+  hosts: all
+  become: yes
+  tasks:
+    - name: Installing NTP ON CentOS
+      yum:
+        name: "{{item}}"
+        state: present
+      when: ansible_distribution == "CentOS"
+      loop:
+        - ntp
+        - wget
+        - git
+        - zip
+        - unzip
+## ADDING CONDITION IF ALL THE VM's are not on same OS
+    - name: Installing NTP on Ubuntu
+      apt:
+        name: "{{item}}"
+        state: present
+## ADDinG update for apt update in ubuntu to be safe from failing
+        update_cache: yes
+      when: ansible_distribution == "Ubuntu"
+      loop:
+        - ntp
+        - wget
+        - git
+        - zip
+        - unzip
+
+## STARTING AND ENABLING ntp sERvicE
+    - name: STARTING & ENABLING SERVICE ON REDHAT
+      service: 
+       name: ntpd
+       state: started
+       enabled: yes 
+      when: ansible_os_family == "RedHat"
+
+    - name: STARTING & ENABLING SERVICE ON Debian
+      service: 
+       name: ntp
+       state: started
+       enabled: yes 
+      when: ansible_os_family == "Debian"
+## ADDING Group AND User  
+    - name: Adding Group
+      group: 
+        name: devops
+        state: present 
+    - name: Add users
+      user: 
+        name: "{{item}}"
+        state: present
+        group: devops
+## Adding usernames using loop/list 
+      loop: "{{username}}"

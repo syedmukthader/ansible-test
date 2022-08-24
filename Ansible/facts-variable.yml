@@ -1,0 +1,15 @@
+---
+- name: Learning fact variables
+  hosts: all
+  tasks:
+    - name: PRITNT OS NAME
+      debug:
+       var: ansible_distribution
+# Sorting for dictnory
+    - name: PRINT MEMORY DETAILS
+      debug:
+       var: ansible_memory_mb.real.free
+# Sorting for list use number [1]
+    - name: PRINT PROCESSOR NAME
+      debug:
+       var: ansible_processor[2]

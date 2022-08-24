@@ -1,0 +1,101 @@
+---
+- name: Provisioning server
+  hosts: all
+  become: yes
+  tasks:
+    - name: Installing NTP ON CentOS
+      yum:
+        name: "{{item}}"
+        state: present
+      when: ansible_distribution == "CentOS"
+      loop:
+        - ntp
+        - wget
+        - git
+        - zip
+        - unzip
+## ADDING CONDITION IF ALL THE VM's are not on same OS
+    - name: Installing NTP on Ubuntu
+      apt:
+        name: "{{item}}"
+        state: present
+## ADDinG update for apt update in ubuntu to be safe from failing
+        update_cache: yes
+      when: ansible_distribution == "Ubuntu"
+      loop:
+        - ntp
+        - wget
+        - git
+        - zip
+        - unzip
+
+## STARTING AND ENABLING ntp sERvicE
+    - name: STARTING & ENABLING SERVICE ON REDHAT
+      service: 
+       name: ntpd
+       state: started
+       enabled: yes 
+      when: ansible_os_family == "RedHat"
+
+    - name: STARTING & ENABLING SERVICE ON Debian
+      service: 
+       name: ntp
+       state: started
+       enabled: yes 
+      when: ansible_os_family == "Debian"
+## ADDING Group AND User  
+    - name: Adding Group
+      group: 
+        name: devops
+        state: present 
+    - name: Add users
+      user: 
+        name: "{{item}}"
+        state: present
+        group: devops
+## Adding usernames using loop/list 
+      loop: "{{username}}"
+## Pushing the banner file Using the Copy module
+    - name: Banner file /etc/motd
+      copy: 
+        content: "This {{ansible_distribution}} is Managed by Ansible. \n"
+        dest: /etc/motd   
+## Deploy NTP CONF File for Redhat/Debian using template
+    - name: Deploy NTP Conf File for RedHat
+      template:
+        src: templates/ntp_redhat.conf.j2
+        dest: /etc/ntp.conf
+      when: ansible_os_family == "RedHat"
+      notify:
+       - RESTART NTP SERVICE ON REDHAT
+
+    - name: Deploy NTP Conf File for Debian
+      template:
+        src: templates/ntp_debian.conf.j2
+        dest: /etc/ntp.conf
+      when: ansible_os_family == "Debian"
+      notify:
+       - Restart NTP SERVICE ON Debian
+
+## Using File Module using it to change ownership/ creating a directory
+    - name: Creating a Dev data dirctory
+      file:
+        path: /opt/devdata
+        state: directory
+        mode: 0775
+
+## Deploy Restart NTP service for RedHat/Debian using handlers
+  handlers:
+    - name: RESTART NTP SERVICE ON REDHAT
+      service: 
+       name: ntpd
+       state: restarted
+       enabled: yes 
+      when: ansible_os_family == "RedHat"
+    
+    - name: Restart NTP SERVICE ON Debian
+      service: 
+       name: ntp
+       state: restarted
+       enabled: yes 
+      when: ansible_os_family == "Debian"

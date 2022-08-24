@@ -1,0 +1,39 @@
+---
+- hosts: localhost
+  gather_facts: False
+  tasks:
+#Creating a Key-pair Using IAM 
+    - name: Create Key Pair
+      ec2_key:
+        name: test1
+        region: us-east-1
+        register: keyout
+
+## Printing Out the key-pair On the Output 
+#    - name: print key
+#      debug:
+#       var: keyout
+
+# Creating a file named sample.pem and saving the key-pair init.
+    - name: Save Key 
+      copy:
+        content: "{{keyout.key.private_key}}"
+        dest: ./sample.pem
+      when: keyout.changed
+## Creating a Ec2 Instance and launching it 
+    - ec2:
+        key_name: my_keypair
+        instance_type: t2.micro
+        image: ami-05fa00d4c63e32376
+        region: us-east-1
+        wait: yes
+        group:                  ## Keeping it Default
+        count: 1
+        vpc_subnet_id:          ## Keeping it Default
+        assign_public_ip:       ## Keeping it Default
+        instance_tags:             ## Using instance_tags so that ec2 instance does not create repeatly when executed
+          Name: ansible_test1
+          db: postgres
+        count_tag:
+          Name: ansible_test1   ## Checking for same named ec2 instance if there then it will skip creation of ec2 instance
+          db: postgres

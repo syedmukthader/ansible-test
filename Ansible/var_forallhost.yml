@@ -1,0 +1,19 @@
+---
+- name: Understaning the order of the variables being executed
+  hosts: all
+  become: yes
+#  vars:
+#  USERname: playuser
+#  comment: variable form playbook
+  tasks:
+    - name: Create a user
+      user:
+# have to define varibales either in host_vars/group_vars(using all or name)/or in CLI 
+        name: "{{USERname}}"
+        comment: "{{comment}}"
+      register: USERout
+
+    - debug:
+        var: USERout.name
+    - debug:
+        var: USERout.comment
